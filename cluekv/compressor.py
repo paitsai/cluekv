@@ -146,21 +146,6 @@ class ClueKVCompressor:
             sigma = utils.compute_head_weights(L_align, tau=params.tau)
             S_ref = utils.compute_reference_attention(sigma, s_bars)
 
-            if debug:
-                _dbg(debug, f"  --- L{layer_idx} ---")
-                # JSD alignment per head (1/JSD, higher = more clue-aligned)
-                jsd = 1.0 / (L_align + params.eps)
-                _dbg(debug, f"    JSD: min={jsd.min().item():.4f} max={jsd.max().item():.4f} "
-                     f"mean={jsd.mean().item():.4f}")
-                _dbg(debug, f"    σ: min={sigma.min().item():.4f} max={sigma.max().item():.4f} "
-                     f"mean={sigma.mean().item():.4f}")
-                # Top-5 head indices with their σ and JSD
-                top5 = torch.topk(sigma, k=min(5, len(sigma)))
-                for rank, (h, w) in enumerate(zip(top5.indices.tolist(), top5.values.tolist())):
-                    _dbg(debug, f"      head {h:>3}: σ={w:.4f}  JSD={jsd[h].item():.4f}")
-                _dbg(debug, f"    S_ref: [{S_ref.min().item():.6f}, {S_ref.max().item():.6f}] "
-                     f"nonzero={(S_ref > 0).sum().item()}/{S_ref.shape[0]}")
-
             before = past_key_values.key_cache[layer_idx].shape[2]
             utils.compress_layer_kv(
                 S_ref, past_key_values, layer_idx=layer_idx,
